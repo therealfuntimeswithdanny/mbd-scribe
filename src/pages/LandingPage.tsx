@@ -15,7 +15,7 @@ export const LandingPage = () => {
             <div className="rounded-full bg-primary p-2">
               <FileText className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">MBD Notes</span>
+            <span className="text-xl font-bold">MBD Scribe</span>
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => navigate("/auth")}>
@@ -33,23 +33,23 @@ export const LandingPage = () => {
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
             <Sparkles className="h-4 w-4" />
-            Beautiful note-taking made simple
+            Free For Life!
           </div>
           
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
             Organize Your Thoughts,
             <br />
-            <span className="text-primary">Beautifully</span>
+            <span className="text-primary"></span>
           </h1>
           
           <p className="text-xl text-muted-foreground">
-            A powerful notes app with rich text editing, folders, tags, and more.
-            Keep your ideas organized and accessible from anywhere.
+            A simple notes app with rich text editing, folders, tags, sync, and more.
+            Keep your ideas organized and accessible from anywhere at anytime.
           </p>
 
           <div className="flex gap-4 justify-center pt-4">
             <Button size="lg" onClick={() => navigate("/auth")}>
-              Start Taking Notes
+              launch app
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
               Learn More
@@ -61,9 +61,9 @@ export const LandingPage = () => {
       {/* Features */}
       <section className="container mx-auto px-4 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Everything you need</h2>
+          <h2 className="text-3xl font-bold mb-4">Everything you need, all in open app</h2>
           <p className="text-lg text-muted-foreground">
-            Powerful features to help you stay organized
+            Powerful tools to help you stay organized, all free forever
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export const LandingPage = () => {
               </div>
               <h3 className="font-semibold text-lg">Folders</h3>
               <p className="text-muted-foreground">
-                Organize notes into folders. Create, rename, and manage your folder structure with ease.
+                Organize notes into folders. Create, rename, and manage your folders with ease.
               </p>
             </CardContent>
           </Card>
@@ -146,13 +146,12 @@ export const LandingPage = () => {
       <section className="container mx-auto px-4 py-24">
         <Card className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/20">
           <CardContent className="p-12 text-center space-y-6">
-            <h2 className="text-3xl font-bold">Ready to get started?</h2>
+            <h2 className="text-3xl font-bold">Get Started For Free</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of people organizing their thoughts and ideas with Notes.
-              It's free to start.
+              Join thousands of people organizing their thoughts and ideas with MBD Scribe.
             </p>
             <Button size="lg" onClick={() => navigate("/auth")}>
-              Create Your Account
+              Create Your Free Account
             </Button>
           </CardContent>
         </Card>
@@ -161,7 +160,7 @@ export const LandingPage = () => {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
-          <p>Built with ❤️ using Lovable</p>
+          <p>&copy; 2024-2025 Made by Danny UK</p>
         </div>
       </footer>
     </div>
