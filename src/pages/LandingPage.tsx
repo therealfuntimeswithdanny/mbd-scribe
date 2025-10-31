@@ -39,7 +39,7 @@ export const LandingPage = () => {
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
             Organize Your Thoughts,
             <br />
-            <span className="text-primary"></span>
+            <span className="text-primary">For Free</span>
           </h1>
           
           <p className="text-xl text-muted-foreground">
