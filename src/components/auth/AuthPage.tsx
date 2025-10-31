@@ -75,8 +75,8 @@ export const AuthPage = () => {
               <FileText className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Notes App</CardTitle>
-          <CardDescription>Create and organize your notes with ease</CardDescription>
+          <CardTitle className="text-2xl">MBD Scribe</CardTitle>
+          <CardDescription>Sign in to Create, Sync and Edit anywhere</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin">
