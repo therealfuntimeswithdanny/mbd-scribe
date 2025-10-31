@@ -39,7 +39,7 @@ export const AuthPage = () => {
       toast.error(error.message);
     } else {
       toast.success("Account created successfully!");
-      navigate("/");
+      navigate("/notes");
     }
   };
 
@@ -62,7 +62,7 @@ export const AuthPage = () => {
       toast.error(error.message);
     } else {
       toast.success("Signed in successfully!");
-      navigate("/");
+      navigate("/notes");
     }
   };
 

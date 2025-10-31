@@ -17,7 +17,7 @@ export const NotesPage = () => {
       (event, session) => {
         setSession(session);
         if (!session) {
-          navigate("/auth");
+          navigate("/");
         }
       }
     );
@@ -25,7 +25,7 @@ export const NotesPage = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (!session) {
-        navigate("/auth");
+        navigate("/");
       }
     });
 

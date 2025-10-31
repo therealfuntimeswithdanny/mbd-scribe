@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { UserProfile } from "./UserProfile";
 import { FolderList } from "./FolderList";
 import { NotesList } from "./NotesList";
+import { ThemeSwitcher } from "../theme/ThemeSwitcher";
 
 interface SidebarProps {
   selectedFolderId: string | null;
@@ -104,16 +105,19 @@ export const Sidebar = ({
 
           <Separator />
 
-          {/* Sign Out */}
-          <div className="p-4">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+          {/* Footer Actions */}
+          <div className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="flex-1 justify-start"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+              <ThemeSwitcher />
+            </div>
           </div>
         </div>
       </aside>
