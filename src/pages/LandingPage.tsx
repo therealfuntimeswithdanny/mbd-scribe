@@ -15,7 +15,7 @@ export const LandingPage = () => {
             <div className="rounded-full bg-primary p-2">
               <FileText className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">Notes</span>
+            <span className="text-xl font-bold">MBD Notes</span>
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => navigate("/auth")}>
