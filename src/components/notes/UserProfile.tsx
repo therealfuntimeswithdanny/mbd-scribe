@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
@@ -13,6 +14,7 @@ export const UserProfile = () => {
   const [profile, setProfile] = useState<{
     display_name: string | null;
     avatar_url: string | null;
+    storage_used_bytes: number;
   } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -27,7 +29,7 @@ export const UserProfile = () => {
     if (user) {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, storage_used_bytes")
         .eq("id", user.id)
         .single();
       
@@ -113,6 +115,9 @@ export const UserProfile = () => {
     .join("")
     .toUpperCase() || "U";
 
+  const storageUsedMB = (profile?.storage_used_bytes || 0) / (1024 * 1024);
+  const storagePercentage = (storageUsedMB / 500) * 100;
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -124,7 +129,12 @@ export const UserProfile = () => {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="font-medium">{profile?.display_name || "User"}</span>
+            <div className="flex flex-col items-start">
+              <span className="font-medium">{profile?.display_name || "User"}</span>
+              <span className="text-xs text-muted-foreground">
+                {storageUsedMB.toFixed(1)} MB / 500 MB
+              </span>
+            </div>
           </Button>
         </DialogTrigger>
         <DialogContent>
@@ -156,6 +166,14 @@ export const UserProfile = () => {
                   </Button>
                 </Label>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Storage Used</span>
+                <span className="font-medium">{storageUsedMB.toFixed(2)} MB / 500 MB</span>
+              </div>
+              <Progress value={storagePercentage} className="h-2" />
             </div>
 
             <form onSubmit={handleNameUpdate} className="space-y-4">

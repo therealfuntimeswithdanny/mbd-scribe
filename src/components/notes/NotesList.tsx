@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -10,6 +11,7 @@ interface NotesListProps {
   selectedNoteId: string | null;
   onNoteSelect: (noteId: string) => void;
   searchQuery: string;
+  viewMode: "list" | "grid";
 }
 
 export const NotesList = ({
@@ -17,6 +19,7 @@ export const NotesList = ({
   selectedNoteId,
   onNoteSelect,
   searchQuery,
+  viewMode,
 }: NotesListProps) => {
   const [notes, setNotes] = useState<any[]>([]);
 
@@ -46,7 +49,8 @@ export const NotesList = ({
     }
 
     if (searchQuery) {
-      query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+      const sanitized = searchQuery.replace(/[%_(),]/g, "").slice(0, 100);
+      query = query.or(`title.ilike.%${sanitized}%,content.ilike.%${sanitized}%`);
     }
 
     const { data } = await query;
@@ -55,6 +59,45 @@ export const NotesList = ({
       setNotes(data);
     }
   };
+
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "");
+
+  if (viewMode === "grid") {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {notes.map((note) => (
+          <Card
+            key={note.id}
+            className={cn(
+              "cursor-pointer transition-all hover:border-primary/50",
+              selectedNoteId === note.id && "border-primary bg-secondary/50"
+            )}
+            onClick={() => onNoteSelect(note.id)}
+          >
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium truncate text-sm">{note.title}</h3>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-3">
+                {stripHtml(note.content) || "No content"}
+              </p>
+              <div className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {notes.length === 0 && (
+          <div className="col-span-2 text-center py-8 text-muted-foreground text-sm">
+            No notes found
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

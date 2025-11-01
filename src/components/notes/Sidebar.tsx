@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Menu, X, LogOut } from "lucide-react";
+import { Search, Plus, Menu, X, LogOut, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,6 +32,7 @@ export const Sidebar = ({
   onSearchChange,
 }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -76,10 +77,26 @@ export const Sidebar = ({
               />
             </div>
 
-            <Button onClick={onNewNote} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              New Note
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={onNewNote} className="flex-1">
+                <Plus className="h-4 w-4 mr-2" />
+                New Note
+              </Button>
+              <Button
+                size="icon"
+                variant={viewMode === "list" ? "secondary" : "outline"}
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant={viewMode === "grid" ? "secondary" : "outline"}
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <Separator />
@@ -99,6 +116,7 @@ export const Sidebar = ({
                 selectedNoteId={selectedNoteId}
                 onNoteSelect={onNoteSelect}
                 searchQuery={searchQuery}
+                viewMode={viewMode}
               />
             </div>
           </ScrollArea>
