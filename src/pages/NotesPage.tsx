@@ -8,26 +8,29 @@ import { Session } from "@supabase/supabase-js";
 export const NotesPage = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+      if (!session) {
+        navigate("/");
+      }
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
+        setIsLoading(false);
         if (!session) {
           navigate("/");
         }
       }
     );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/");
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -51,7 +54,7 @@ export const NotesPage = () => {
     }
   };
 
-  if (!session) {
+  if (isLoading || !session) {
     return null;
   }
 
