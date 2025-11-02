@@ -50,12 +50,24 @@ const VideoExtension = Node.create({
   },
   addCommands() {
     return {
-      setVideo: (options: { src: string; size?: number }) => ({ commands }) => {
-        return commands.insertContent({
-          type: this.name,
-          attrs: { src: options.src, "data-size": options.size },
-        });
-      },
+      setVideo:
+        (options: { src: string; size?: number }) =>
+        ({ commands }: any) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: { src: options.src, "data-size": options.size },
+          });
+        },
+    } as any;
+  },
+});
+
+// Extend Image to support data-size attribute
+const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      "data-size": { default: null },
     };
   },
 });
@@ -71,7 +83,7 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
       Heading.configure({
         levels: [1, 2, 3],
       }),
-      Image.configure({
+      CustomImage.configure({
         inline: true,
         allowBase64: true,
       }),
@@ -132,8 +144,8 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         img.onload = () => {
           editor?.chain().focus().setImage({ 
             src: data.url,
-            "data-size": file.size 
-          }).run();
+            alt: "",
+          } as any).updateAttributes("image", { "data-size": file.size }).run();
         };
         toast.success("Image uploaded successfully");
       } catch (error) {
@@ -170,7 +182,7 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         if (!response.ok) throw new Error("Upload failed");
 
         const data = await response.json();
-        editor?.commands.setVideo({ src: data.url, size: file.size });
+        (editor?.commands as any).setVideo({ src: data.url, size: file.size });
         toast.success("Video uploaded successfully");
       } catch (error) {
         toast.error("Failed to upload video");
