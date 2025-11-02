@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import Heading from "@tiptap/extension-heading";
+import { Node } from "@tiptap/core";
 import {
   Bold,
   Italic,
@@ -17,6 +18,7 @@ import {
   Undo,
   Redo,
   ImagePlus,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -28,6 +30,35 @@ interface RichTextEditorProps {
   onChange: (content: string) => void;
   editable?: boolean;
 }
+
+// Custom Video extension
+const VideoExtension = Node.create({
+  name: "video",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      "data-size": { default: null },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "video" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["video", { ...HTMLAttributes, controls: true }];
+  },
+  addCommands() {
+    return {
+      setVideo: (options: { src: string; size?: number }) => ({ commands }) => {
+        return commands.insertContent({
+          type: this.name,
+          attrs: { src: options.src, "data-size": options.size },
+        });
+      },
+    };
+  },
+});
 
 export const RichTextEditor = ({ content, onChange, editable = true }: RichTextEditorProps) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -44,6 +75,7 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         inline: true,
         allowBase64: true,
       }),
+      VideoExtension,
       Placeholder.configure({
         placeholder: "Start writing your note...",
       }),
@@ -95,11 +127,54 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         if (!response.ok) throw new Error("Upload failed");
 
         const data = await response.json();
-        editor?.chain().focus().setImage({ src: data.url }).run();
+        const img = new window.Image();
+        img.src = data.url;
+        img.onload = () => {
+          editor?.chain().focus().setImage({ 
+            src: data.url,
+            "data-size": file.size 
+          }).run();
+        };
         toast.success("Image uploaded successfully");
       } catch (error) {
         toast.error("Failed to upload image");
         console.error("Image upload error:", error);
+      }
+    };
+    input.click();
+  };
+
+  const handleVideoUpload = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "video/*";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      if (file.size > 100 * 1024 * 1024) {
+        toast.error("Video must be less than 100MB");
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        toast.info("Uploading video...");
+        const response = await fetch("https://cdn.madebydanny.uk/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error("Upload failed");
+
+        const data = await response.json();
+        editor?.commands.setVideo({ src: data.url, size: file.size });
+        toast.success("Video uploaded successfully");
+      } catch (error) {
+        toast.error("Failed to upload video");
+        console.error("Video upload error:", error);
       }
     };
     input.click();
@@ -200,6 +275,9 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         <ToolbarButton onClick={handleImageUpload}>
           <ImagePlus className="h-4 w-4" />
         </ToolbarButton>
+        <ToolbarButton onClick={handleVideoUpload}>
+          <Video className="h-4 w-4" />
+        </ToolbarButton>
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -217,7 +295,7 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         </ToolbarButton>
       </div>
 
-      <EditorContent editor={editor} className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg" />
+      <EditorContent editor={editor} className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_video]:max-w-full [&_video]:h-auto [&_video]:rounded-lg" />
     </div>
   );
 };
