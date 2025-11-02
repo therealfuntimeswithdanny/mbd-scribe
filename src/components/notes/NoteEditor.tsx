@@ -112,6 +112,14 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
       toast.error("Failed to save note");
     } else {
       setIsDirty(false);
+      
+      // Update storage usage
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.rpc("recalculate_user_storage", {
+          target_user_id: user.id,
+        });
+      }
     }
   };
 
