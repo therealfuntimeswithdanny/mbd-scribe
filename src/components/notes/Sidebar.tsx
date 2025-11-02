@@ -20,6 +20,8 @@ interface SidebarProps {
   onNewNote: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export const Sidebar = ({
@@ -30,8 +32,9 @@ export const Sidebar = ({
   onNewNote,
   searchQuery,
   onSearchChange,
+  isOpen,
+  onToggle,
 }: SidebarProps) => {
-  const [isOpen, setIsOpen] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const handleSignOut = async () => {
@@ -45,16 +48,6 @@ export const Sidebar = ({
 
   return (
     <>
-      {/* Mobile toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
       {/* Sidebar */}
       <aside
         className={cn(
@@ -144,7 +137,7 @@ export const Sidebar = ({
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={onToggle}
         />
       )}
     </>

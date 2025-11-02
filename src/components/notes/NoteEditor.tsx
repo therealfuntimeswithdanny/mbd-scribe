@@ -19,13 +19,16 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextEditor } from "./RichTextEditor";
-import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X } from "lucide-react";
+import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NoteEditorProps {
   noteId: string | null;
+  onBack?: () => void;
 }
 
-export const NoteEditor = ({ noteId }: NoteEditorProps) => {
+export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
+  const isMobile = useIsMobile();
   const [note, setNote] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -221,6 +224,16 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
   return (
     <div className="flex-1 flex flex-col h-screen">
       <div className="border-b border-border p-4 flex items-center gap-4">
+        {isMobile && onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="shrink-0"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
         <Input
           value={title}
           onChange={(e) => {
