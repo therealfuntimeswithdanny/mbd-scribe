@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, RefreshCw } from "lucide-react";
 import { AvatarCropper } from "./AvatarCropper";
 
 export const UserProfile = () => {
@@ -19,6 +19,7 @@ export const UserProfile = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -109,6 +110,25 @@ export const UserProfile = () => {
     }
   };
 
+  const handleSyncStorage = async () => {
+    setSyncing(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.rpc("recalculate_user_storage", {
+      target_user_id: user.id,
+    });
+
+    setSyncing(false);
+
+    if (error) {
+      toast.error("Failed to sync storage");
+    } else {
+      toast.success("Storage synced!");
+      loadProfile();
+    }
+  };
+
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -174,6 +194,16 @@ export const UserProfile = () => {
                 <span className="font-medium">{storageUsedMB.toFixed(2)} MB / 500 MB</span>
               </div>
               <Progress value={storagePercentage} className="h-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncStorage}
+                disabled={syncing}
+                className="w-full mt-2"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync Storage"}
+              </Button>
             </div>
 
             <form onSubmit={handleNameUpdate} className="space-y-4">

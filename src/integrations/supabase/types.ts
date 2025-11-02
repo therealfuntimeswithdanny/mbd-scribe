@@ -169,6 +169,10 @@ export type Database = {
         Args: { note_content: string; note_title: string }
         Returns: number
       }
+      recalculate_user_storage: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
