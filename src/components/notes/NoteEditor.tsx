@@ -19,8 +19,9 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextEditor } from "./RichTextEditor";
-import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu } from "lucide-react";
+import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu, Download } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import TurndownService from "turndown";
 
 interface NoteEditorProps {
   noteId: string | null;
@@ -213,6 +214,23 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
     }
   };
 
+  const handleExportMarkdown = () => {
+    const turndownService = new TurndownService();
+    const markdown = turndownService.turndown(content);
+    
+    const blob = new Blob([`# ${title}\n\n${markdown}`], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title || "note"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Note exported as Markdown");
+  };
+
   if (!noteId) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -258,6 +276,10 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
             <DropdownMenuItem onClick={() => setIsTagDialogOpen(true)}>
               <Tag className="h-4 w-4 mr-2" />
               Manage Tags
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportMarkdown}>
+              <Download className="h-4 w-4 mr-2" />
+              Export as Markdown
             </DropdownMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
