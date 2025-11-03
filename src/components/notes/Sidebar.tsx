@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Menu, X, LogOut, LayoutGrid, List } from "lucide-react";
+import { Search, Plus, LogOut, LayoutGrid, List, Star, Trash2, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +22,8 @@ interface SidebarProps {
   onSearchChange: (query: string) => void;
   isOpen: boolean;
   onToggle: () => void;
+  viewMode: "all" | "favorites" | "trash";
+  onViewModeChange: (mode: "all" | "favorites" | "trash") => void;
 }
 
 export const Sidebar = ({
@@ -34,8 +36,11 @@ export const Sidebar = ({
   onSearchChange,
   isOpen,
   onToggle,
+  viewMode: filterMode,
+  onViewModeChange,
 }: SidebarProps) => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -75,10 +80,14 @@ export const Sidebar = ({
                 <Plus className="h-4 w-4 mr-2" />
                 New Note
               </Button>
+              <Button onClick={() => setShowNewFolderDialog(true)} size="icon" variant="outline" title="New Folder">
+                <FolderPlus className="h-5 w-5" />
+              </Button>
               <Button
                 size="icon"
                 variant={viewMode === "list" ? "secondary" : "outline"}
                 onClick={() => setViewMode("list")}
+                title="List View"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -86,6 +95,7 @@ export const Sidebar = ({
                 size="icon"
                 variant={viewMode === "grid" ? "secondary" : "outline"}
                 onClick={() => setViewMode("grid")}
+                title="Grid View"
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -97,9 +107,52 @@ export const Sidebar = ({
           {/* Folders & Notes */}
           <ScrollArea className="flex-1 px-4">
             <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <Button
+                  variant={filterMode === "all" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    onViewModeChange("all");
+                    onFolderSelect(null);
+                  }}
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  All Notes
+                </Button>
+                <Button
+                  variant={filterMode === "favorites" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    onViewModeChange("favorites");
+                    onFolderSelect(null);
+                  }}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Favorites
+                </Button>
+                <Button
+                  variant={filterMode === "trash" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    onViewModeChange("trash");
+                    onFolderSelect(null);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Trash
+                </Button>
+              </div>
+
+              <Separator />
+
               <FolderList
                 selectedFolderId={selectedFolderId}
-                onFolderSelect={onFolderSelect}
+                onFolderSelect={(id) => {
+                  onFolderSelect(id);
+                  onViewModeChange("all");
+                }}
+                showNewFolderDialog={showNewFolderDialog}
+                onNewFolderDialogChange={setShowNewFolderDialog}
               />
               
               <Separator />
@@ -110,6 +163,7 @@ export const Sidebar = ({
                 onNoteSelect={onNoteSelect}
                 searchQuery={searchQuery}
                 viewMode={viewMode}
+                filterMode={filterMode}
               />
             </div>
           </ScrollArea>

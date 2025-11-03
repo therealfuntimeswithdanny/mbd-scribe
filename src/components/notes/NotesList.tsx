@@ -12,6 +12,7 @@ interface NotesListProps {
   onNoteSelect: (noteId: string) => void;
   searchQuery: string;
   viewMode: "list" | "grid";
+  filterMode: "all" | "favorites" | "trash";
 }
 
 export const NotesList = ({
@@ -20,6 +21,7 @@ export const NotesList = ({
   onNoteSelect,
   searchQuery,
   viewMode,
+  filterMode,
 }: NotesListProps) => {
   const [notes, setNotes] = useState<any[]>([]);
 
@@ -36,7 +38,7 @@ export const NotesList = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedFolderId, searchQuery]);
+  }, [selectedFolderId, searchQuery, filterMode]);
 
   const loadNotes = async () => {
     let query = supabase
@@ -44,11 +46,21 @@ export const NotesList = ({
       .select("*")
       .order("updated_at", { ascending: false });
 
-    if (selectedFolderId) {
-      query = query.eq("folder_id", selectedFolderId);
+    // Filter based on mode
+    if (filterMode === "favorites") {
+      query = query.eq("is_favorited", true).is("deleted_at", null);
+    } else if (filterMode === "trash") {
+      query = query.not("deleted_at", "is", null);
+    } else {
+      // For "all" mode, exclude deleted notes
+      query = query.is("deleted_at", null);
+      
+      if (selectedFolderId) {
+        query = query.eq("folder_id", selectedFolderId);
+      }
     }
 
-    if (searchQuery) {
+    if (searchQuery && filterMode !== "trash") {
       const sanitized = searchQuery.replace(/[%_(),]/g, "").slice(0, 100);
       query = query.or(`title.ilike.%${sanitized}%,content.ilike.%${sanitized}%`);
     }

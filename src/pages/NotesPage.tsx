@@ -14,6 +14,7 @@ export const NotesPage = () => {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"all" | "favorites" | "trash">("all");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -80,6 +81,8 @@ export const NotesPage = () => {
         onSearchChange={setSearchQuery}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
       <NoteEditor 
         noteId={selectedNoteId} 

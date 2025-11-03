@@ -22,12 +22,25 @@ import { cn } from "@/lib/utils";
 interface FolderListProps {
   selectedFolderId: string | null;
   onFolderSelect: (folderId: string | null) => void;
+  showNewFolderDialog?: boolean;
+  onNewFolderDialogChange?: (show: boolean) => void;
 }
 
-export const FolderList = ({ selectedFolderId, onFolderSelect }: FolderListProps) => {
+export const FolderList = ({ 
+  selectedFolderId, 
+  onFolderSelect,
+  showNewFolderDialog,
+  onNewFolderDialogChange 
+}: FolderListProps) => {
   const [folders, setFolders] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<any>(null);
+
+  useEffect(() => {
+    if (showNewFolderDialog !== undefined) {
+      setIsDialogOpen(showNewFolderDialog);
+    }
+  }, [showNewFolderDialog]);
 
   useEffect(() => {
     loadFolders();
@@ -75,6 +88,7 @@ export const FolderList = ({ selectedFolderId, onFolderSelect }: FolderListProps
         toast.success("Folder updated!");
         setIsDialogOpen(false);
         setEditingFolder(null);
+        onNewFolderDialogChange?.(false);
       }
     } else {
       const { error } = await supabase
@@ -86,6 +100,7 @@ export const FolderList = ({ selectedFolderId, onFolderSelect }: FolderListProps
       } else {
         toast.success("Folder created!");
         setIsDialogOpen(false);
+        onNewFolderDialogChange?.(false);
       }
     }
   };

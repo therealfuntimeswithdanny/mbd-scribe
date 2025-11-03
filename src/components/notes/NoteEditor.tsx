@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextEditor } from "./RichTextEditor";
-import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu, Download } from "lucide-react";
+import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu, Download, Star, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TurndownService from "turndown";
 
@@ -39,6 +39,8 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
   const [noteTags, setNoteTags] = useState<any[]>([]);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
 
   useEffect(() => {
     if (noteId) {
@@ -71,6 +73,8 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
       setNote(data);
       setTitle(data.title);
       setContent(data.content);
+      setIsFavorited(data.is_favorited || false);
+      setIsDeleted(!!data.deleted_at);
       setIsDirty(false);
     }
   };
@@ -128,18 +132,68 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
   };
 
   const handleDelete = async () => {
-    if (!noteId || !confirm("Delete this note?")) return;
+    if (!noteId) return;
 
     const { error } = await supabase
       .from("notes")
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq("id", noteId);
 
     if (error) {
-      toast.error("Failed to delete note");
-    } else {
-      toast.success("Note deleted");
+      toast.error("Failed to move note to trash");
+      return;
     }
+
+    toast.success("Note moved to trash");
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!noteId || !confirm("Permanently delete this note? This cannot be undone.")) return;
+
+    const { error } = await supabase.from("notes").delete().eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to delete note permanently");
+      return;
+    }
+
+    toast.success("Note deleted permanently");
+  };
+
+  const handleRestore = async () => {
+    if (!noteId) return;
+
+    const { error } = await supabase
+      .from("notes")
+      .update({ deleted_at: null })
+      .eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to restore note");
+      return;
+    }
+
+    setIsDeleted(false);
+    toast.success("Note restored");
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!noteId) return;
+
+    const newFavoritedState = !isFavorited;
+
+    const { error } = await supabase
+      .from("notes")
+      .update({ is_favorited: newFavoritedState })
+      .eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to update favorite status");
+      return;
+    }
+
+    setIsFavorited(newFavoritedState);
+    toast.success(newFavoritedState ? "Added to favorites" : "Removed from favorites");
   };
 
   const handleMoveToFolder = async (folderId: string | null) => {
@@ -266,6 +320,16 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
             Saving...
           </Badge>
         )}
+        {!isDeleted && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleFavorite}
+            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star className={`h-5 w-5 ${isFavorited ? "fill-yellow-400 text-yellow-400" : ""}`} />
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -273,40 +337,55 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-popover">
-            <DropdownMenuItem onClick={() => setIsTagDialogOpen(true)}>
-              <Tag className="h-4 w-4 mr-2" />
-              Manage Tags
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportMarkdown}>
-              <Download className="h-4 w-4 mr-2" />
-              Export as Markdown
-            </DropdownMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Move to Folder
+            {isDeleted ? (
+              <>
+                <DropdownMenuItem onClick={handleRestore}>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Restore Note
                 </DropdownMenuItem>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="left" className="bg-popover">
-                <DropdownMenuItem onClick={() => handleMoveToFolder(null)}>
-                  No Folder
+                <DropdownMenuItem onClick={handlePermanentDelete} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
                 </DropdownMenuItem>
-                {folders.map((folder) => (
-                  <DropdownMenuItem
-                    key={folder.id}
-                    onClick={() => handleMoveToFolder(folder.id)}
-                  >
-                    {folder.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Note
-            </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem onClick={() => setIsTagDialogOpen(true)}>
+                  <Tag className="h-4 w-4 mr-2" />
+                  Manage Tags
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportMarkdown}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as Markdown
+                </DropdownMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Move to Folder
+                    </DropdownMenuItem>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="left" className="bg-popover">
+                    <DropdownMenuItem onClick={() => handleMoveToFolder(null)}>
+                      No Folder
+                    </DropdownMenuItem>
+                    {folders.map((folder) => (
+                      <DropdownMenuItem
+                        key={folder.id}
+                        onClick={() => handleMoveToFolder(folder.id)}
+                      >
+                        {folder.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Move to Trash
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
