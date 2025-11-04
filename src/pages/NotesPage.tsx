@@ -18,6 +18,7 @@ export const NotesPage = () => {
   const [viewMode, setViewMode] = useState<"all" | "favorites" | "trash">("all");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,6 +62,10 @@ export const NotesPage = () => {
     }
   };
 
+  const handleNewFolder = () => {
+    setShowNewFolderDialog(true);
+  };
+
   if (isLoading || !session) {
     return null;
   }
@@ -95,6 +100,7 @@ export const NotesPage = () => {
         <RightSidebar
           selectedNoteId={selectedNoteId}
           onNoteSelect={handleNoteSelect}
+          onNewNote={handleNewNote}
           refreshTrigger={refreshTrigger}
         />
       )}
