@@ -119,7 +119,6 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
-          storage_used_bytes: number | null
           updated_at: string | null
         }
         Insert: {
@@ -128,7 +127,6 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
-          storage_used_bytes?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -137,7 +135,6 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
-          storage_used_bytes?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -171,14 +168,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_note_size: {
-        Args: { note_content: string; note_title: string }
-        Returns: number
-      }
-      recalculate_user_storage: {
-        Args: { target_user_id: string }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

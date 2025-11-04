@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sidebar } from "@/components/notes/Sidebar";
 import { NoteEditor } from "@/components/notes/NoteEditor";
+import { RightSidebar } from "@/components/notes/RightSidebar";
 import { Session } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -16,6 +17,7 @@ export const NotesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"all" | "favorites" | "trash">("all");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,6 +57,7 @@ export const NotesPage = () => {
 
     if (data && !error) {
       setSelectedNoteId(data.id);
+      setRefreshTrigger(prev => prev + 1);
     }
   };
 
@@ -88,6 +91,13 @@ export const NotesPage = () => {
         noteId={selectedNoteId} 
         onBack={() => setIsSidebarOpen(true)}
       />
+      {!isMobile && (
+        <RightSidebar
+          selectedNoteId={selectedNoteId}
+          onNoteSelect={handleNoteSelect}
+          refreshTrigger={refreshTrigger}
+        />
+      )}
     </div>
   );
 };

@@ -4,22 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, RefreshCw } from "lucide-react";
+import { Upload } from "lucide-react";
 import { AvatarCropper } from "./AvatarCropper";
 
 export const UserProfile = () => {
   const [profile, setProfile] = useState<{
     display_name: string | null;
     avatar_url: string | null;
-    storage_used_bytes: number;
   } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -30,7 +27,7 @@ export const UserProfile = () => {
     if (user) {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, storage_used_bytes")
+        .select("display_name, avatar_url")
         .eq("id", user.id)
         .single();
       
@@ -110,33 +107,12 @@ export const UserProfile = () => {
     }
   };
 
-  const handleSyncStorage = async () => {
-    setSyncing(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.rpc("recalculate_user_storage", {
-      target_user_id: user.id,
-    });
-
-    setSyncing(false);
-
-    if (error) {
-      toast.error("Failed to sync storage");
-    } else {
-      toast.success("Storage synced!");
-      loadProfile();
-    }
-  };
 
   const initials = profile?.display_name
     ?.split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase() || "U";
-
-  const storageUsedMB = (profile?.storage_used_bytes || 0) / (1024 * 1024);
-  const storagePercentage = (storageUsedMB / 500) * 100;
 
   return (
     <>
@@ -151,9 +127,6 @@ export const UserProfile = () => {
             </Avatar>
             <div className="flex flex-col items-start">
               <span className="font-medium">{profile?.display_name || "User"}</span>
-              <span className="text-xs text-muted-foreground">
-                {storageUsedMB.toFixed(1)} MB / 500 MB
-              </span>
             </div>
           </Button>
         </DialogTrigger>
@@ -188,23 +161,6 @@ export const UserProfile = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Storage Used</span>
-                <span className="font-medium">{storageUsedMB.toFixed(2)} MB / 500 MB</span>
-              </div>
-              <Progress value={storagePercentage} className="h-2" />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSyncStorage}
-                disabled={syncing}
-                className="w-full mt-2"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync Storage"}
-              </Button>
-            </div>
 
             <form onSubmit={handleNameUpdate} className="space-y-4">
               <div className="space-y-2">
