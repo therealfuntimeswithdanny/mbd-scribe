@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut } from "lucide-react";
+import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut, ChevronRight, ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,8 @@ export const RightSidebar = ({
   const [activeTab, setActiveTab] = useState("all");
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [folderNotes, setFolderNotes] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     loadData();
@@ -78,6 +80,18 @@ export const RightSidebar = ({
     const { data } = await query;
     if (data) {
       setNotes(data);
+      
+      // Group notes by folder
+      const notesByFolder: Record<string, any[]> = {};
+      data.forEach(note => {
+        if (note.folder_id) {
+          if (!notesByFolder[note.folder_id]) {
+            notesByFolder[note.folder_id] = [];
+          }
+          notesByFolder[note.folder_id].push(note);
+        }
+      });
+      setFolderNotes(notesByFolder);
     }
   };
 
@@ -144,10 +158,22 @@ export const RightSidebar = ({
     setIsNewFolderDialogOpen(true);
   };
 
+  const toggleFolder = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
   const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "");
 
   return (
-    <aside className="w-80 border-l border-border bg-card flex flex-col h-screen">
+    <aside className="w-80 border-r border-border bg-card flex flex-col h-screen">
       {/* Header with User Profile */}
       <div className="p-4 space-y-3">
         <UserProfile />
@@ -204,32 +230,77 @@ export const RightSidebar = ({
                   <h3 className="text-sm font-semibold text-muted-foreground px-2">
                     Folders
                   </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {folders.map((folder) => (
-                      <Card
-                        key={folder.id}
-                        className="cursor-pointer hover:border-primary/50 transition-all"
-                      >
-                        <CardContent className="p-3 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Folder className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="text-sm font-medium truncate">
-                              {folder.name}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  <div className="space-y-1">
+                    {folders.map((folder) => {
+                      const isExpanded = expandedFolders.has(folder.id);
+                      const notesInFolder = folderNotes[folder.id] || [];
+                      
+                      return (
+                        <div key={folder.id}>
+                          <Card
+                            className="cursor-pointer hover:border-primary/50 transition-all"
+                            onClick={() => toggleFolder(folder.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-center gap-2">
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <Folder className="h-4 w-4 text-primary flex-shrink-0" />
+                                <span className="text-sm font-medium truncate">
+                                  {folder.name}
+                                </span>
+                                <span className="ml-auto text-xs text-muted-foreground">
+                                  {notesInFolder.length}
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {isExpanded && notesInFolder.length > 0 && (
+                            <div className="ml-6 mt-1 space-y-1">
+                              {notesInFolder.map((note) => (
+                                <Card
+                                  key={note.id}
+                                  className={cn(
+                                    "cursor-pointer transition-all hover:border-primary/50",
+                                    selectedNoteId === note.id && "border-primary bg-secondary/50"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNoteSelect(note.id);
+                                  }}
+                                >
+                                  <CardContent className="p-2 space-y-1">
+                                    <div className="flex items-start gap-2">
+                                      <FileText className="h-3 w-3 mt-1 flex-shrink-0 text-primary" />
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium truncate text-xs">{note.title}</h4>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground line-clamp-1 pl-5">
+                                      {stripHtml(note.content) || "No content"}
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground px-2">
-                  All Notes
+                  All Notes ({notes.filter(n => !n.folder_id).length}/100)
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {notes.map((note) => (
+                  {notes.filter(note => !note.folder_id).map((note) => (
                     <Card
                       key={note.id}
                       className={cn(
@@ -269,7 +340,7 @@ export const RightSidebar = ({
           <TabsContent value="favorites" className="p-4 mt-0">
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground px-2">
-                Starred Notes
+                Starred Notes ({notes.length}/10)
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {notes.map((note) => (
@@ -311,7 +382,7 @@ export const RightSidebar = ({
           <TabsContent value="trash" className="p-4 mt-0">
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-muted-foreground px-2">
-                Trash
+                Trash ({notes.length})
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {notes.map((note) => (

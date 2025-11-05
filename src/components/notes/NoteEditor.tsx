@@ -287,7 +287,7 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
 
   return (
     <div className="flex-1 flex flex-col h-screen">
-      <div className="border-b border-border p-4 flex items-center gap-4">
+      <div className="sticky top-0 z-10 bg-background border-b border-border p-4 flex items-center gap-4">
         {isMobile && onBack && (
           <Button
             variant="ghost"
@@ -383,7 +383,7 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
       </div>
 
       {noteTags.length > 0 && (
-        <div className="px-6 pt-4 flex flex-wrap gap-2">
+        <div className="sticky top-[73px] z-10 bg-background px-6 pt-4 pb-2 flex flex-wrap gap-2">
           {noteTags.map((tag) => (
             <Badge
               key={tag.id}

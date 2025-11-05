@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Sidebar } from "@/components/notes/Sidebar";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { RightSidebar } from "@/components/notes/RightSidebar";
 import { Session } from "@supabase/supabase-js";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 export const NotesPage = () => {
   const navigate = useNavigate();
@@ -15,10 +15,7 @@ export const NotesPage = () => {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"all" | "favorites" | "trash">("all");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -56,54 +53,34 @@ export const NotesPage = () => {
       .select()
       .single();
 
-    if (data && !error) {
+    if (error) {
+      if (error.message.includes("Note limit reached")) {
+        toast.error("Note limit reached! Maximum 100 notes allowed.");
+      } else {
+        toast.error("Failed to create note");
+      }
+    } else if (data) {
       setSelectedNoteId(data.id);
       setRefreshTrigger(prev => prev + 1);
     }
-  };
-
-  const handleNewFolder = () => {
-    setShowNewFolderDialog(true);
   };
 
   if (isLoading || !session) {
     return null;
   }
 
-  const handleNoteSelect = (noteId: string) => {
-    setSelectedNoteId(noteId);
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
-  };
-
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar
-        selectedFolderId={selectedFolderId}
-        onFolderSelect={setSelectedFolderId}
+      <RightSidebar
         selectedNoteId={selectedNoteId}
-        onNoteSelect={handleNoteSelect}
+        onNoteSelect={setSelectedNoteId}
         onNewNote={handleNewNote}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        refreshTrigger={refreshTrigger}
       />
       <NoteEditor 
         noteId={selectedNoteId} 
-        onBack={() => setIsSidebarOpen(true)}
+        onBack={() => {}}
       />
-      {!isMobile && (
-        <RightSidebar
-          selectedNoteId={selectedNoteId}
-          onNoteSelect={handleNoteSelect}
-          onNewNote={handleNewNote}
-          refreshTrigger={refreshTrigger}
-        />
-      )}
     </div>
   );
 };
