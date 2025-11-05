@@ -4,6 +4,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import Heading from "@tiptap/extension-heading";
+import Link from "@tiptap/extension-link";
+import Highlight from "@tiptap/extension-highlight";
 import { Node } from "@tiptap/core";
 import {
   Bold,
@@ -19,9 +21,13 @@ import {
   Redo,
   ImagePlus,
   Video,
+  Link as LinkIcon,
+  Highlighter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -74,6 +80,8 @@ const CustomImage = Image.extend({
 
 export const RichTextEditor = ({ content, onChange, editable = true }: RichTextEditorProps) => {
   const [isMounted, setIsMounted] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -82,6 +90,15 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
       }),
       Heading.configure({
         levels: [1, 2, 3],
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: "text-primary underline cursor-pointer hover:text-primary/80",
+        },
+      }),
+      Highlight.configure({
+        multicolor: false,
       }),
       CustomImage.configure({
         inline: true,
@@ -192,6 +209,24 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
     input.click();
   };
 
+  const handleLinkClick = () => {
+    const previousUrl = editor?.getAttributes("link").href;
+    setLinkUrl(previousUrl || "");
+    setIsLinkDialogOpen(true);
+  };
+
+  const handleSetLink = () => {
+    if (!linkUrl) {
+      editor?.chain().focus().unsetLink().run();
+      setIsLinkDialogOpen(false);
+      return;
+    }
+
+    editor?.chain().focus().setLink({ href: linkUrl }).run();
+    setIsLinkDialogOpen(false);
+    setLinkUrl("");
+  };
+
   if (!isMounted || !editor) {
     return null;
   }
@@ -284,6 +319,21 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
+        <ToolbarButton
+          onClick={handleLinkClick}
+          active={editor.isActive("link")}
+        >
+          <LinkIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
+          active={editor.isActive("highlight")}
+        >
+          <Highlighter className="h-4 w-4" />
+        </ToolbarButton>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
         <ToolbarButton onClick={handleImageUpload}>
           <ImagePlus className="h-4 w-4" />
         </ToolbarButton>
@@ -308,6 +358,34 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
       </div>
 
       <EditorContent editor={editor} className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_video]:max-w-full [&_video]:h-auto [&_video]:rounded-lg" />
+
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Insert Link</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://example.com"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSetLink();
+                }
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsLinkDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSetLink}>
+                {linkUrl ? "Set Link" : "Remove Link"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
