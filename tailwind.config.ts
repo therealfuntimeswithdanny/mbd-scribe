@@ -13,6 +13,13 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        'inter': ['Inter', 'sans-serif'],
+        'merriweather': ['Merriweather', 'serif'],
+        'mono': ['Roboto Mono', 'monospace'],
+        'playfair': ['Playfair Display', 'serif'],
+        'open-sans': ['Open Sans', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

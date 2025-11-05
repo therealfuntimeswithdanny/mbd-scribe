@@ -6,6 +6,9 @@ import Image from "@tiptap/extension-image";
 import Heading from "@tiptap/extension-heading";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
+import FontFamily from "@tiptap/extension-font-family";
 import { Node } from "@tiptap/core";
 import {
   Bold,
@@ -23,11 +26,19 @@ import {
   Video,
   Link as LinkIcon,
   Highlighter,
+  Type,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -90,6 +101,11 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
       }),
       Heading.configure({
         levels: [1, 2, 3],
+      }),
+      TextStyle,
+      Color,
+      FontFamily.configure({
+        types: ['textStyle'],
       }),
       Link.configure({
         openOnClick: false,
@@ -258,7 +274,89 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
 
   return (
     <div className="border border-border rounded-lg overflow-hidden bg-card">
-      <div className="flex items-center gap-1 p-2 border-b border-border bg-muted/50">
+      <div className="flex items-center gap-1 p-2 border-b border-border bg-muted/50 overflow-x-auto">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Type className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setFontFamily('Inter').run()}>
+              Inter
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setFontFamily('Merriweather').run()}>
+              Merriweather
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setFontFamily('Playfair Display').run()}>
+              Playfair Display
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setFontFamily('Open Sans').run()}>
+              Open Sans
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setFontFamily('Roboto Mono').run()}>
+              Roboto Mono
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().unsetFontFamily().run()}>
+              Default
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Palette className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#000000').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#000000' }} />
+                Black
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#ef4444').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }} />
+                Red
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#3b82f6').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }} />
+                Blue
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#22c55e').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#22c55e' }} />
+                Green
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#f59e0b').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f59e0b' }} />
+                Orange
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setColor('#8b5cf6').run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#8b5cf6' }} />
+                Purple
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().unsetColor().run()}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border border-border" />
+                Default
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive("bold")}
@@ -271,6 +369,9 @@ export const RichTextEditor = ({ content, onChange, editable = true }: RichTextE
         >
           <Italic className="h-4 w-4" />
         </ToolbarButton>
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           active={editor.isActive("heading", { level: 1 })}
