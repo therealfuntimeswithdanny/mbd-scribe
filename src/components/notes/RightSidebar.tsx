@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut, ChevronRight, ChevronDown } from "lucide-react";
+import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface RightSidebarProps {
   selectedNoteId: string | null;
@@ -174,166 +175,167 @@ export const RightSidebar = ({
 
   return (
     <aside className="w-80 border-r border-border bg-card flex flex-col h-screen">
-      {/* Header with User Profile */}
-      <div className="p-4 space-y-3">
-        <UserProfile />
-        
-        <div className="flex items-center gap-2">
-          <Button onClick={onNewNote} className="flex-1" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            New Note
-          </Button>
-          <Button onClick={handleNewFolderClick} size="sm" variant="outline" title="New Folder">
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Sticky Header with User Profile */}
+      <div className="sticky top-0 z-10 bg-card border-b border-border">
+        <div className="p-4 space-y-3">
+          <UserProfile />
+          
+          <div className="flex items-center gap-2">
+            <Button onClick={onNewNote} className="flex-1" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Note
+            </Button>
+            <Button onClick={handleNewFolderClick} size="sm" variant="outline" title="New Folder">
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+          </div>
 
-        {/* Limits Overview */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-2 rounded-md bg-secondary/50">
-            <div className="font-medium text-muted-foreground">Notes</div>
-            <div className="text-lg font-bold">{notes.length}/100</div>
-          </div>
-          <div className="p-2 rounded-md bg-secondary/50">
-            <div className="font-medium text-muted-foreground">Folders</div>
-            <div className="text-lg font-bold">{folders.length}/10</div>
-          </div>
-          <div className="p-2 rounded-md bg-secondary/50">
-            <div className="font-medium text-muted-foreground">Favorites</div>
-            <div className="text-lg font-bold">{favoritesCount}/10</div>
-          </div>
-          <div className="p-2 rounded-md bg-secondary/50">
-            <div className="font-medium text-muted-foreground">Tags</div>
-            <div className="text-lg font-bold">{tags.length}/50</div>
+          {/* Limits Overview */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2 rounded-md bg-secondary/50">
+              <div className="font-medium text-muted-foreground">Notes</div>
+              <div className="text-lg font-bold">{notes.length}/100</div>
+            </div>
+            <div className="p-2 rounded-md bg-secondary/50">
+              <div className="font-medium text-muted-foreground">Folders</div>
+              <div className="text-lg font-bold">{folders.length}/10</div>
+            </div>
+            <div className="p-2 rounded-md bg-secondary/50">
+              <div className="font-medium text-muted-foreground">Favorites</div>
+              <div className="text-lg font-bold">{favoritesCount}/10</div>
+            </div>
+            <div className="p-2 rounded-md bg-secondary/50">
+              <div className="font-medium text-muted-foreground">Tags</div>
+              <div className="text-lg font-bold">{tags.length}/50</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <Separator />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-2 grid w-[calc(100%-2rem)] grid-cols-3">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="favorites">
-            <Star className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="trash">
-            <Trash2 className="h-4 w-4" />
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        {/* Sticky Tabs */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border">
+          <TabsList className="mx-4 my-2 grid w-[calc(100%-2rem)] grid-cols-3">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="favorites">
+              <Star className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="trash">
+              <Trash2 className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <ScrollArea className="flex-1">
-          <TabsContent value="all" className="p-4 mt-0">
-            <div className="space-y-4">
-              {folders.length > 0 && (
+          <TabsContent value="all" className="p-4 mt-0 space-y-4">
+            {/* Folders Section */}
+            {folders.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground px-2">
+                  Folders
+                </h3>
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-muted-foreground px-2">
-                    Folders
-                  </h3>
-                  <div className="space-y-1">
-                    {folders.map((folder) => {
-                      const isExpanded = expandedFolders.has(folder.id);
-                      const notesInFolder = folderNotes[folder.id] || [];
-                      
-                      return (
-                        <div key={folder.id}>
-                          <Card
-                            className="cursor-pointer hover:border-primary/50 transition-all"
-                            onClick={() => toggleFolder(folder.id)}
-                          >
+                  {folders.map((folder) => {
+                    const notesInFolder = folderNotes[folder.id] || [];
+                    const isExpanded = expandedFolders.has(folder.id);
+                    
+                    return (
+                      <Collapsible
+                        key={folder.id}
+                        open={isExpanded}
+                        onOpenChange={() => toggleFolder(folder.id)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <Card className="cursor-pointer hover:border-primary/50 transition-all">
                             <CardContent className="p-3">
                               <div className="flex items-center gap-2">
-                                {isExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                )}
                                 <Folder className="h-4 w-4 text-primary flex-shrink-0" />
-                                <span className="text-sm font-medium truncate">
+                                <span className="text-sm font-medium truncate flex-1">
                                   {folder.name}
                                 </span>
-                                <span className="ml-auto text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {notesInFolder.length}
                                 </span>
                               </div>
                             </CardContent>
                           </Card>
-                          
-                          {isExpanded && notesInFolder.length > 0 && (
-                            <div className="ml-6 mt-1 space-y-1">
-                              {notesInFolder.map((note) => (
-                                <Card
-                                  key={note.id}
-                                  className={cn(
-                                    "cursor-pointer transition-all hover:border-primary/50",
-                                    selectedNoteId === note.id && "border-primary bg-secondary/50"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onNoteSelect(note.id);
-                                  }}
-                                >
-                                  <CardContent className="p-2 space-y-1">
-                                    <div className="flex items-start gap-2">
-                                      <FileText className="h-3 w-3 mt-1 flex-shrink-0 text-primary" />
-                                      <div className="flex-1 min-w-0">
-                                        <h4 className="font-medium truncate text-xs">{note.title}</h4>
-                                      </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground line-clamp-1 pl-5">
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent className="space-y-1 mt-1 ml-4">
+                          {notesInFolder.map((note) => (
+                            <Card
+                              key={note.id}
+                              className={cn(
+                                "cursor-pointer transition-all hover:border-primary/50",
+                                selectedNoteId === note.id && "border-primary bg-secondary/50"
+                              )}
+                              onClick={() => onNoteSelect(note.id)}
+                            >
+                              <CardContent className="p-2.5 space-y-1">
+                                <div className="flex items-start gap-2">
+                                  <FileText className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-primary" />
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium truncate text-xs">{note.title}</h4>
+                                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                                       {stripHtml(note.content) || "No content"}
                                     </p>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          {notesInFolder.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                              No notes in this folder
+                            </p>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground px-2">
-                  All Notes ({notes.filter(n => !n.folder_id).length}/100)
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {notes.filter(note => !note.folder_id).map((note) => (
-                    <Card
-                      key={note.id}
-                      className={cn(
-                        "cursor-pointer transition-all hover:border-primary/50",
-                        selectedNoteId === note.id && "border-primary bg-secondary/50"
-                      )}
-                      onClick={() => onNoteSelect(note.id)}
-                    >
-                      <CardContent className="p-3 space-y-2">
-                        <div className="flex items-start gap-2">
-                          <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium truncate text-sm">{note.title}</h4>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {stripHtml(note.content) || "No content"}
-                        </p>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(note.updated_at), {
-                            addSuffix: true,
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                {notes.length === 0 && (
-                  <p className="text-center py-8 text-sm text-muted-foreground">
-                    No notes found
-                  </p>
-                )}
               </div>
+            )}
+
+            {/* Uncategorized Notes */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground px-2">
+                Uncategorized ({notes.filter(n => !n.folder_id).length})
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {notes.filter(note => !note.folder_id).map((note) => (
+                  <Card
+                    key={note.id}
+                    className={cn(
+                      "cursor-pointer transition-all hover:border-primary/50",
+                      selectedNoteId === note.id && "border-primary bg-secondary/50"
+                    )}
+                    onClick={() => onNoteSelect(note.id)}
+                  >
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate text-sm">{note.title}</h4>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {stripHtml(note.content) || "No content"}
+                      </p>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(note.updated_at), {
+                          addSuffix: true,
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {notes.filter(n => !n.folder_id).length === 0 && (
+                <p className="text-center py-8 text-sm text-muted-foreground">
+                  No uncategorized notes
+                </p>
+              )}
             </div>
           </TabsContent>
 
@@ -423,20 +425,21 @@ export const RightSidebar = ({
         </ScrollArea>
       </Tabs>
 
-      <Separator />
-
-      {/* Footer Actions */}
-      <div className="p-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="flex-1 justify-start"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-          <ThemeSwitcher />
+      {/* Sticky Footer Actions */}
+      <div className="sticky bottom-0 z-10 bg-card border-t border-border">
+        <div className="p-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1 justify-start"
+              onClick={handleSignOut}
+              size="sm"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+            <ThemeSwitcher />
+          </div>
         </div>
       </div>
 
