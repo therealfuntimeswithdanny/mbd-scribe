@@ -119,7 +119,9 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          is_premium: boolean
           updated_at: string | null
+          upgraded_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -127,7 +129,9 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          is_premium?: boolean
           updated_at?: string | null
+          upgraded_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -135,7 +139,9 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          is_premium?: boolean
           updated_at?: string | null
+          upgraded_at?: string | null
         }
         Relationships: []
       }

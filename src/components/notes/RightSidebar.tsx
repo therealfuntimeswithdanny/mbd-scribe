@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut } from "lucide-react";
+import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { UpgradeDialog } from "./UpgradeDialog";
 
 interface RightSidebarProps {
   selectedNoteId: string | null;
@@ -30,6 +31,7 @@ export const RightSidebar = ({
   refreshTrigger,
 }: RightSidebarProps) => {
   const [notes, setNotes] = useState<any[]>([]);
+  const [allNotes, setAllNotes] = useState<any[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [favoritesCount, setFavoritesCount] = useState(0);
@@ -38,6 +40,8 @@ export const RightSidebar = ({
   const [newFolderName, setNewFolderName] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [folderNotes, setFolderNotes] = useState<Record<string, any[]>>({});
+  const [isPremium, setIsPremium] = useState(false);
+  const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -59,9 +63,31 @@ export const RightSidebar = ({
 
   const loadData = async () => {
     loadNotes();
+    loadAllNotes();
     loadFolders();
     loadTags();
     loadFavoritesCount();
+    loadPremiumStatus();
+  };
+
+  const loadAllNotes = async () => {
+    const { data } = await supabase
+      .from("notes")
+      .select("*");
+    if (data) setAllNotes(data);
+  };
+
+  const loadPremiumStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_premium")
+      .eq("id", user.id)
+      .single();
+    
+    if (data) setIsPremium(data.is_premium);
   };
 
   const loadNotes = async () => {
@@ -173,6 +199,13 @@ export const RightSidebar = ({
 
   const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "");
 
+  const limits = {
+    notes: isPremium ? 200 : 100,
+    folders: isPremium ? 20 : 10,
+    favorites: isPremium ? 20 : 10,
+    tags: isPremium ? 100 : 50,
+  };
+
   return (
     <aside className="w-80 border-r border-border bg-card flex flex-col h-screen">
       {/* Sticky Header with User Profile */}
@@ -190,25 +223,57 @@ export const RightSidebar = ({
             </Button>
           </div>
 
+          {/* Upgrade Button */}
+          {!isPremium && (
+            <Button 
+              onClick={() => setIsUpgradeDialogOpen(true)} 
+              variant="outline" 
+              size="sm"
+              className="w-full border-primary/50 hover:bg-primary/10"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Upgrade to Premium
+            </Button>
+          )}
+
           {/* Limits Overview */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2 rounded-md bg-secondary/50">
+            <div className={cn(
+              "p-2 rounded-md",
+              isPremium ? "bg-primary/10 border border-primary/30" : "bg-secondary/50"
+            )}>
               <div className="font-medium text-muted-foreground">Notes</div>
-              <div className="text-lg font-bold">{notes.length}/100</div>
+              <div className="text-lg font-bold">{allNotes.length}/{limits.notes}</div>
             </div>
-            <div className="p-2 rounded-md bg-secondary/50">
+            <div className={cn(
+              "p-2 rounded-md",
+              isPremium ? "bg-primary/10 border border-primary/30" : "bg-secondary/50"
+            )}>
               <div className="font-medium text-muted-foreground">Folders</div>
-              <div className="text-lg font-bold">{folders.length}/10</div>
+              <div className="text-lg font-bold">{folders.length}/{limits.folders}</div>
             </div>
-            <div className="p-2 rounded-md bg-secondary/50">
+            <div className={cn(
+              "p-2 rounded-md",
+              isPremium ? "bg-primary/10 border border-primary/30" : "bg-secondary/50"
+            )}>
               <div className="font-medium text-muted-foreground">Favorites</div>
-              <div className="text-lg font-bold">{favoritesCount}/10</div>
+              <div className="text-lg font-bold">{favoritesCount}/{limits.favorites}</div>
             </div>
-            <div className="p-2 rounded-md bg-secondary/50">
+            <div className={cn(
+              "p-2 rounded-md",
+              isPremium ? "bg-primary/10 border border-primary/30" : "bg-secondary/50"
+            )}>
               <div className="font-medium text-muted-foreground">Tags</div>
-              <div className="text-lg font-bold">{tags.length}/50</div>
+              <div className="text-lg font-bold">{tags.length}/{limits.tags}</div>
             </div>
           </div>
+
+          {isPremium && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/30">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-xs font-medium text-primary">Premium Active</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -467,6 +532,13 @@ export const RightSidebar = ({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Dialog */}
+      <UpgradeDialog 
+        open={isUpgradeDialogOpen} 
+        onOpenChange={setIsUpgradeDialogOpen}
+        onUpgradeSuccess={loadData}
+      />
     </aside>
   );
 };

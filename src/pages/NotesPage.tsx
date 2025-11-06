@@ -55,7 +55,10 @@ export const NotesPage = () => {
 
     if (error) {
       if (error.message.includes("Note limit reached")) {
-        toast.error("Note limit reached! Maximum 100 notes allowed.");
+        // Extract the limit from the error message
+        const limitMatch = error.message.match(/Maximum (\d+) notes/);
+        const limit = limitMatch ? limitMatch[1] : "100";
+        toast.error(`Note limit reached! Maximum ${limit} notes allowed.`);
       } else {
         toast.error("Failed to create note");
       }
