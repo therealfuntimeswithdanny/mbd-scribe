@@ -89,6 +89,7 @@ export const UpgradeDialog = ({ open, onOpenChange, onUpgradeSuccess }: UpgradeD
               <li>• Favorites: 10 → 20</li>
               <li>• Tags: 50 → 100</li>
             </ul>
+            Get a code <a href="mailto:danielmorrisey@pm.me" target="_blank">here</a>
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={validateAndUpgrade} className="space-y-4">
