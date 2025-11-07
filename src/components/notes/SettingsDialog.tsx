@@ -19,6 +19,7 @@ interface SettingsDialogProps {
 const SETTINGS_KEYS = {
   showUpgradeButton: "settings_showUpgradeButton",
   showLimits: "settings_showLimits",
+  showWordCount: "settings_showWordCount",
 } as const;
 
 interface SettingsContextType {
@@ -26,6 +27,8 @@ interface SettingsContextType {
   setShowUpgradeButton: (value: boolean) => void;
   showLimits: boolean;
   setShowLimits: (value: boolean) => void;
+  showWordCount: boolean;
+  setShowWordCount: (value: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -41,6 +44,11 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     return saved !== null ? saved === "true" : true; // Default to true
   });
 
+  const [showWordCount, setShowWordCountState] = useState(() => {
+    const saved = localStorage.getItem(SETTINGS_KEYS.showWordCount);
+    return saved !== null ? saved === "true" : false; // Default to false
+  });
+
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEYS.showUpgradeButton, showUpgradeButton.toString());
   }, [showUpgradeButton]);
@@ -48,6 +56,10 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEYS.showLimits, showLimits.toString());
   }, [showLimits]);
+
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_KEYS.showWordCount, showWordCount.toString());
+  }, [showWordCount]);
 
   const setShowUpgradeButton = (value: boolean) => {
     setShowUpgradeButtonState(value);
@@ -57,6 +69,10 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     setShowLimitsState(value);
   };
 
+  const setShowWordCount = (value: boolean) => {
+    setShowWordCountState(value);
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -64,6 +80,8 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
         setShowUpgradeButton,
         showLimits,
         setShowLimits,
+        showWordCount,
+        setShowWordCount,
       }}
     >
       {children}
@@ -86,6 +104,8 @@ export const SettingsDialog = ({ children }: SettingsDialogProps) => {
     setShowUpgradeButton,
     showLimits,
     setShowLimits,
+    showWordCount,
+    setShowWordCount,
   } = useSettings();
 
   return (
@@ -134,6 +154,24 @@ export const SettingsDialog = ({ children }: SettingsDialogProps) => {
                 id="show-limits"
                 checked={showLimits}
                 onCheckedChange={setShowLimits}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="show-word-count" className="text-base">
+                  Show Word Count
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Display word count in the note editor
+                </p>
+              </div>
+              <Switch
+                id="show-word-count"
+                checked={showWordCount}
+                onCheckedChange={setShowWordCount}
               />
             </div>
           </div>

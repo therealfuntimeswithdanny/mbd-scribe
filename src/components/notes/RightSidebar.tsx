@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut, Sparkles } from "lucide-react";
+import { FileText, Folder, Star, Trash2, Plus, FolderPlus, LogOut, Sparkles, Pin, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export const RightSidebar = ({
   const [isPremium, setIsPremium] = useState(false);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const { showUpgradeButton, showLimits } = useSettings();
+  const [pinnedNotes, setPinnedNotes] = useState<any[]>([]);
+  const [recentNotes, setRecentNotes] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -70,6 +72,8 @@ export const RightSidebar = ({
     loadTags();
     loadFavoritesCount();
     loadPremiumStatus();
+    loadPinnedNotes();
+    loadRecentNotes();
   };
 
   const loadAllNotes = async () => {
@@ -147,6 +151,38 @@ export const RightSidebar = ({
       .eq("is_favorited", true)
       .is("deleted_at", null);
     setFavoritesCount(count || 0);
+  };
+
+  const loadPinnedNotes = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("notes")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_pinned", true)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(10);
+
+    if (data) setPinnedNotes(data);
+  };
+
+  const loadRecentNotes = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("notes")
+      .select("*")
+      .eq("user_id", user.id)
+      .is("deleted_at", null)
+      .not("last_viewed_at", "is", null)
+      .order("last_viewed_at", { ascending: false })
+      .limit(10);
+
+    if (data) setRecentNotes(data);
   };
 
   const handleSignOut = async () => {
@@ -297,6 +333,84 @@ export const RightSidebar = ({
 
         <ScrollArea className="flex-1">
           <TabsContent value="all" className="p-4 mt-0 space-y-4">
+            {/* Pinned Notes Section */}
+            {pinnedNotes.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground px-2 flex items-center gap-2">
+                  <Pin className="h-4 w-4" />
+                  Pinned Notes
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {pinnedNotes.map((note) => (
+                    <Card
+                      key={note.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:border-primary/50",
+                        selectedNoteId === note.id && "border-primary bg-secondary/50"
+                      )}
+                      onClick={() => onNoteSelect(note.id)}
+                    >
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <Pin className="h-4 w-4 mt-1 flex-shrink-0 text-primary fill-primary" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium truncate text-sm">{note.title}</h4>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {stripHtml(note.content) || "No content"}
+                        </p>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(note.updated_at), {
+                            addSuffix: true,
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Notes Section */}
+            {recentNotes.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground px-2 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Recent Notes
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {recentNotes.map((note) => (
+                    <Card
+                      key={note.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:border-primary/50",
+                        selectedNoteId === note.id && "border-primary bg-secondary/50"
+                      )}
+                      onClick={() => onNoteSelect(note.id)}
+                    >
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <FileText className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium truncate text-sm">{note.title}</h4>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {stripHtml(note.content) || "No content"}
+                        </p>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(note.last_viewed_at || note.updated_at), {
+                            addSuffix: true,
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Folders Section */}
             {folders.length > 0 && (
               <div className="space-y-2">

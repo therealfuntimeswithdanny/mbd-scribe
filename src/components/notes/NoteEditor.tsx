@@ -19,9 +19,11 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextEditor } from "./RichTextEditor";
-import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu, Download, Star, RotateCcw } from "lucide-react";
+import { MoreVertical, Trash2, FolderOpen, Tag, Plus, X, Menu, Download, Star, RotateCcw, Pin, Lock, Unlock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TurndownService from "turndown";
+import { useSettings } from "./SettingsDialog";
+import { Input } from "@/components/ui/input";
 
 interface NoteEditorProps {
   noteId: string | null;
@@ -30,6 +32,7 @@ interface NoteEditorProps {
 
 export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
   const isMobile = useIsMobile();
+  const { showWordCount } = useSettings();
   const [note, setNote] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -41,6 +44,13 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
   const [newTagName, setNewTagName] = useState("");
   const [isFavorited, setIsFavorited] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordToSet, setPasswordToSet] = useState("");
+  const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState("");
 
   useEffect(() => {
     if (noteId) {
@@ -75,7 +85,25 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
       setContent(data.content);
       setIsFavorited(data.is_favorited || false);
       setIsDeleted(!!data.deleted_at);
+      setIsPinned(data.is_pinned || false);
+      setIsLocked(!!data.password_hash);
       setIsDirty(false);
+
+      // Update last_viewed_at
+      await supabase
+        .from("notes")
+        .update({ last_viewed_at: new Date().toISOString() })
+        .eq("id", noteId);
+
+      // Check if note is locked and needs password
+      if (data.password_hash) {
+        // Check if password is already in session storage
+        const sessionKey = `unlocked_note_${noteId}`;
+        const unlocked = sessionStorage.getItem(sessionKey);
+        if (!unlocked) {
+          setIsUnlockDialogOpen(true);
+        }
+      }
     }
   };
 
@@ -186,6 +214,112 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
 
     setIsFavorited(newFavoritedState);
     toast.success(newFavoritedState ? "Added to favorites" : "Removed from favorites");
+  };
+
+  const handleTogglePin = async () => {
+    if (!noteId) return;
+
+    const newPinnedState = !isPinned;
+
+    const { error } = await supabase
+      .from("notes")
+      .update({ is_pinned: newPinnedState })
+      .eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to update pin status");
+      return;
+    }
+
+    setIsPinned(newPinnedState);
+    toast.success(newPinnedState ? "Note pinned" : "Note unpinned");
+  };
+
+  const handleSetPassword = async () => {
+    if (!noteId || !passwordToSet.trim()) return;
+
+    // Simple hash function (in production, use a proper hashing library)
+    const hashPassword = async (password: string) => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    };
+
+    const passwordHash = await hashPassword(passwordToSet);
+
+    const { error } = await supabase
+      .from("notes")
+      .update({ password_hash: passwordHash })
+      .eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to set password");
+      return;
+    }
+
+    setIsLocked(true);
+    setPasswordToSet("");
+    setIsPasswordDialogOpen(false);
+    toast.success("Note locked with password");
+  };
+
+  const handleRemovePassword = async () => {
+    if (!noteId) return;
+
+    const { error } = await supabase
+      .from("notes")
+      .update({ password_hash: null })
+      .eq("id", noteId);
+
+    if (error) {
+      toast.error("Failed to remove password");
+      return;
+    }
+
+    setIsLocked(false);
+    const sessionKey = `unlocked_note_${noteId}`;
+    sessionStorage.removeItem(sessionKey);
+    toast.success("Password removed");
+  };
+
+  const handleUnlockNote = async () => {
+    if (!noteId || !unlockPassword.trim()) return;
+
+    // Hash the input password
+    const encoder = new TextEncoder();
+    const data = encoder.encode(unlockPassword);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const inputHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    // Get the stored hash
+    const { data: noteData } = await supabase
+      .from("notes")
+      .select("password_hash")
+      .eq("id", noteId)
+      .single();
+
+    if (!noteData || noteData.password_hash !== inputHash) {
+      toast.error("Incorrect password");
+      setUnlockPassword("");
+      return;
+    }
+
+    // Store unlocked state in session
+    const sessionKey = `unlocked_note_${noteId}`;
+    sessionStorage.setItem(sessionKey, "true");
+    setIsUnlockDialogOpen(false);
+    setUnlockPassword("");
+    toast.success("Note unlocked");
+  };
+
+  const getWordCount = () => {
+    if (!content) return 0;
+    const text = content.replace(/<[^>]*>/g, ""); // Remove HTML tags
+    const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+    return words.length;
   };
 
   const handleMoveToFolder = async (folderId: string | null) => {
@@ -312,15 +446,41 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
             Saving...
           </Badge>
         )}
+        {showWordCount && (
+          <Badge variant="outline" className="shrink-0">
+            {getWordCount()} words
+          </Badge>
+        )}
         {!isDeleted && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleToggleFavorite}
-            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Star className={`h-5 w-5 ${isFavorited ? "fill-yellow-400 text-yellow-400" : ""}`} />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleTogglePin}
+              title={isPinned ? "Unpin note" : "Pin note"}
+            >
+              <Pin className={`h-5 w-5 ${isPinned ? "fill-primary text-primary" : ""}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={isLocked ? handleRemovePassword : () => setIsPasswordDialogOpen(true)}
+              title={isLocked ? "Remove password" : "Lock note with password"}
+            >
+              {isLocked ? (
+                <Lock className="h-5 w-5 text-primary" />
+              ) : (
+                <Unlock className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleToggleFavorite}
+              title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={`h-5 w-5 ${isFavorited ? "fill-yellow-400 text-yellow-400" : ""}`} />
+            </Button>
+          </>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -404,13 +564,23 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
       )}
 
       <div className="flex-1 overflow-auto p-6">
-        <RichTextEditor
-          content={content}
-          onChange={(newContent) => {
-            setContent(newContent);
-            setIsDirty(true);
-          }}
-        />
+        {isLocked && !sessionStorage.getItem(`unlocked_note_${noteId}`) ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4">
+              <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground">This note is locked. Please unlock it to view the content.</p>
+            </div>
+          </div>
+        ) : (
+          <RichTextEditor
+            content={content}
+            onChange={(newContent) => {
+              setContent(newContent);
+              setIsDirty(true);
+            }}
+            editable={!isLocked || !!sessionStorage.getItem(`unlocked_note_${noteId}`)}
+          />
+        )}
       </div>
 
       <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
@@ -454,6 +624,73 @@ export const NoteEditor = ({ noteId, onBack }: NoteEditorProps) => {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Set Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lock Note with Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={passwordToSet}
+                onChange={(e) => setPasswordToSet(e.target.value)}
+                placeholder="Enter password"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSetPassword();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSetPassword} disabled={!passwordToSet.trim()}>
+                Lock Note
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlock Dialog */}
+      <Dialog open={isUnlockDialogOpen} onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unlock Note</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="unlock-password">Password</Label>
+              <Input
+                id="unlock-password"
+                type="password"
+                value={unlockPassword}
+                onChange={(e) => setUnlockPassword(e.target.value)}
+                placeholder="Enter password"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleUnlockNote();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleUnlockNote} disabled={!unlockPassword.trim()}>
+                Unlock
+              </Button>
             </div>
           </div>
         </DialogContent>
