@@ -23,6 +23,16 @@
   <meta name="twitter:title" content="MBD Scribe">
   <meta property="og:description" content="A beautiful notes app with rich text editing, folders, tags, and search. Keep your thoughts organized.">
   <meta name="twitter:description" content="A beautiful notes app with rich text editing, folders, tags, and search. Keep your thoughts organized.">
+  
+  <script>
+    // Apply dark mode immediately to prevent flash
+    (function() {
+      const saved = localStorage.getItem('darkMode');
+      if (saved === 'true' || (saved === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
 </head>
 
   <body>

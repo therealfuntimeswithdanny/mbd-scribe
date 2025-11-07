@@ -61,6 +61,9 @@ export const themes: Record<string, Theme> = {
 interface ThemeContextType {
   currentTheme: string;
   setTheme: (theme: string) => void;
+  darkMode: boolean;
+  setDarkMode: (dark: boolean) => void;
+  toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -68,6 +71,15 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentTheme, setCurrentTheme] = useState(() => {
     return localStorage.getItem("theme") || "amber";
+  });
+
+  const [darkMode, setDarkModeState] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) {
+      return saved === "true";
+    }
+    // Check system preference if no saved preference
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   useEffect(() => {
@@ -81,14 +93,32 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("theme", currentTheme);
   }, [currentTheme]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", darkMode.toString());
+  }, [darkMode]);
+
   const setTheme = (theme: string) => {
     if (themes[theme]) {
       setCurrentTheme(theme);
     }
   };
 
+  const setDarkMode = (dark: boolean) => {
+    setDarkModeState(dark);
+  };
+
+  const toggleDarkMode = () => {
+    setDarkModeState(prev => !prev);
+  };
+
   return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme }}>
+    <ThemeContext.Provider value={{ currentTheme, setTheme, darkMode, setDarkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );
