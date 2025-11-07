@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { UpgradeDialog } from "./UpgradeDialog";
+import { SettingsDialog, useSettings } from "./SettingsDialog";
 
 interface RightSidebarProps {
   selectedNoteId: string | null;
@@ -42,6 +43,7 @@ export const RightSidebar = ({
   const [folderNotes, setFolderNotes] = useState<Record<string, any[]>>({});
   const [isPremium, setIsPremium] = useState(false);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
+  const { showUpgradeButton, showLimits } = useSettings();
 
   useEffect(() => {
     loadData();
@@ -224,7 +226,7 @@ export const RightSidebar = ({
           </div>
 
           {/* Upgrade Button */}
-          {!isPremium && (
+          {!isPremium && showUpgradeButton && (
             <Button 
               onClick={() => setIsUpgradeDialogOpen(true)} 
               variant="outline" 
@@ -237,7 +239,8 @@ export const RightSidebar = ({
           )}
 
           {/* Limits Overview */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          {showLimits && (
+            <div className="grid grid-cols-2 gap-2 text-xs">
             <div className={cn(
               "p-2 rounded-md",
               isPremium ? "bg-primary/10 border border-primary/30" : "bg-secondary/50"
@@ -267,6 +270,7 @@ export const RightSidebar = ({
               <div className="text-lg font-bold">{tags.length}/{limits.tags}</div>
             </div>
           </div>
+          )}
 
           {isPremium && (
             <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/30">
@@ -503,6 +507,7 @@ export const RightSidebar = ({
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
+            <SettingsDialog />
             <ThemeSwitcher />
           </div>
         </div>
