@@ -76,9 +76,6 @@ export type Database = {
           folder_id: string | null
           id: string
           is_favorited: boolean | null
-          is_pinned: boolean | null
-          password_hash: string | null
-          last_viewed_at: string | null
           title: string
           updated_at: string | null
           user_id: string
@@ -90,9 +87,6 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_favorited?: boolean | null
-          is_pinned?: boolean | null
-          password_hash?: string | null
-          last_viewed_at?: string | null
           title?: string
           updated_at?: string | null
           user_id: string
@@ -104,9 +98,6 @@ export type Database = {
           folder_id?: string | null
           id?: string
           is_favorited?: boolean | null
-          is_pinned?: boolean | null
-          password_hash?: string | null
-          last_viewed_at?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string
